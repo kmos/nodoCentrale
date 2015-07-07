@@ -51,42 +51,50 @@ USBD_HandleTypeDef USBD_Device;
 
 static xQueueHandle xSwitchQueue;
 static void vLedTask( void *pvParameters );
-static void vSwitchTask( void *pvParameters );
-static void vPrint( void *pvParameters );
+static void vRxCenterTxNetTask( void *pvParameters);
+static void vRxNetTxCenterTask( void *pvParameters);
+//static void vSwitchTask( void *pvParameters );
+//static void vPrint( void *pvParameters );
+void setupUSB(void);
+void setupBSD(void);
 
 
 int
 main(int argc, char* argv[])
 {
     HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
-       USBD_Init(&USBD_Device, &VCP_Desc, 0);
-       	USBD_RegisterClass(&USBD_Device, &USBD_CDC);
-       	USBD_CDC_RegisterInterface(&USBD_Device, &USBD_CDC_Template_fops);
-       	USBD_Start(&USBD_Device);
-       	HAL_Delay(4000);
-       BSP_LED_Init(LED3);
-       BSP_LED_Init(LED4);
-       BSP_LED_Init(LED5);
-       BSP_LED_Init(LED6);
-       BSP_PB_Init(BUTTON_KEY, BUTTON_MODE_GPIO);
-   xTaskCreate( vLedTask, /* Pointer to the function that implements the task. */
-   	            "vLedTask",/* Text name for the task. For debugging only. */
+    setupUSB();
+    HAL_Delay(4000);
+    setupBSD();
+
+    xTaskCreate( vRxCenterTxNetTask, /* Pointer to the function that implements the task. */
+   	            "RicezioneCentroControllo",/* Text name for the task. For debugging only. */
    	            200,/* Stack depth in words. */
    	            NULL,/* We are not using the task parameter. */
    	            tskIDLE_PRIORITY+1,  /* Task Priority */
    	            NULL /* We are not going to use the task handle. */
    	            );
-   xTaskCreate( vSwitchTask, "vSwitchTask", 200, NULL, tskIDLE_PRIORITY, NULL );
-   static char printTaskNameA[] = "Task A\0";
-   static char printTaskNameB[] = "Task B\0";
-   xTaskCreate( vPrint, "vPrint_A", 200, (void*)&printTaskNameA, tskIDLE_PRIORITY, NULL );
-   xTaskCreate( vPrint, "vPrint_B", 200, (void*)&printTaskNameB, tskIDLE_PRIORITY, NULL );
+    xTaskCreate( vRxNetTxCenterTask, "RicezioneNetwork", 200, NULL, tskIDLE_PRIORITY, NULL );
+    //static char printTaskNameA[] = "Task A\0";
+    //static char printTaskNameB[] = "Task B\0";
+    //xTaskCreate( vPrint, "vPrint_A", 200, (void*)&printTaskNameA, tskIDLE_PRIORITY, NULL );
+    //xTaskCreate( vPrint, "vPrint_B", 200, (void*)&printTaskNameB, tskIDLE_PRIORITY, NULL );
+
 
    /* Create the Queue for communication between the tasks */
-   	xSwitchQueue = xQueueCreate( 5, sizeof(uint8_t) );
+   //	xSwitchQueue = xQueueCreate( 5, sizeof(uint8_t) );
 
    	vTaskStartScheduler();
    	for( ;; );
+
+
+}
+
+static void vRxCenterTxNetTask( void *pvParameters){
+
+}
+
+static void vRxNetTxCenterTask( void *pvParameters){
 
 }
 
@@ -105,6 +113,7 @@ static void vLedTask( void *pvParameters )
         }
     }
 }
+
 
 static void vSwitchTask( void *pvParameters )
 {
@@ -130,6 +139,22 @@ static void vSwitchTask( void *pvParameters )
         vTaskDelay( 20 );
     }
 }
+
+void setupBSD(void){
+	BSP_LED_Init(LED3);
+    BSP_LED_Init(LED4);
+    BSP_LED_Init(LED5);
+    BSP_LED_Init(LED6);
+    //BSP_PB_Init(BUTTON_KEY, BUTTON_MODE_GPIO);
+}
+
+void setupUSB(){
+	USBD_Init(&USBD_Device, &VCP_Desc, 0);
+	USBD_RegisterClass(&USBD_Device, &USBD_CDC);
+	USBD_CDC_RegisterInterface(&USBD_Device, &USBD_CDC_Template_fops);
+	USBD_Start(&USBD_Device);
+}
+
 
 void vPrint( void *pvParameters ){
 	char* taskName = (char*)(pvParameters);
