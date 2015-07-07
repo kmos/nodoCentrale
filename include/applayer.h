@@ -8,6 +8,7 @@ typedef uint8_t OpCode;
 #define CANJOIN			((uint8_t)0x04)			//canjoin risponde al nodo con la chiave condivisa			### Centro Controllo -> Nodo Centrale
 /*#####################*/
 
+#define NODOCENTRALE
 
 typedef struct payload{
 	uint8_t id; 		//id sensore
@@ -26,18 +27,34 @@ typedef struct aPPpackage{
 	Payload	payload;
 } APPpackage;
 
-//Pacchetto Centro controllo <-> Nodo Centrale
+
+
+#ifdef 	NODOCENTRALE
+//###################################################
+//Pacchetti Centro controllo <-> Nodo Centrale
+//##################################################
+
+//struttura dati in ricezione al centro di controllo
 typedef struct nodepack{
 	uint16_t address;
 	APPpackage pack;
 } Nodepack;
 
+//messaggio sicurezza join <->
 typedef struct secpack{
 	uint64_t id0;	//è necessario?
 	uint32_t id1;
 	uint64_t secret0;
 	uint64_t secret1;
 } Secpack;
+
+//messaggio richiesta dati dal sensore ->
+typedef struct getdata{
+	uint16_t address;
+	uint8_t sensor;
+} Getdata;
+
+#endif
 
 //id a 12 byte
 //indirizzi a 16 bit
