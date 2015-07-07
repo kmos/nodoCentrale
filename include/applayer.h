@@ -7,13 +7,13 @@ typedef uint8_t OpCode;
 /*#####################*/
 
 typedef struct payload{
-	uint8_t ID;
-	int32_t valore;
-	uint8_t alarm;
-	int32_t High_Threashold;
-	int32_t Low_Threashold;
-	int16_t periodo;
-	int8_t  priorità;
+	uint8_t id; 		//id nodo
+	int32_t val;		//valore
+	uint8_t alarm;		//allarme
+	int32_t ht;			//high th.shold
+	int32_t lt;			//low  th.shold
+	int16_t period;		//periodo
+	int8_t  priority;	//priorità
 }Payload;
 
 typedef struct aPPpackage{
