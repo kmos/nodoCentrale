@@ -1,63 +1,43 @@
-//
-// This file is part of the GNU ARM Eclipse distribution.
-// Copyright (c) 2014 Liviu Ionescu.
-//
-
 // ----------------------------------------------------------------------------
 
 #include "stm32f407xx.h"
 #include "stm32f4xx_hal.h"
-
 #include <stdio.h>
 #include "diag/Trace.h"
+#include "stm32f4_discovery.h"
+#include "usbd_core.h"
+#include "usbd_cdc.h"
+#include "usbd_cdc_if_template.h"
+#include "usbd_desc.h"
+#include "applayer.h"
+
+#ifdef FREERTOS_ON
 /* Kernel includes. */
 #include "FreeRTOS.h"
 #include "task.h"
 #include "timers.h"
 #include "queue.h"
+/* functions */
+static xQueueHandle xSwitchQueue;
+static void vRxCenterTxNetTask( void *pvParameters);
+static void vRxNetTxCenterTask( void *pvParameters);
+#endif
 
-#include "stm32f4_discovery.h"
 
-#include "usbd_core.h"
-#include "usbd_cdc.h"
-#include "usbd_cdc_if_template.h"
-#include "usbd_desc.h"
 
 USBD_HandleTypeDef USBD_Device;
 
-
-/* Hardware and starter kit includes. */
-
-
-// ----------------------------------------------------------------------------
-//
-// Standalone STM32F4 empty sample (trace via NONE).
-//
-// Trace support is enabled by adding the TRACE macro definition.
-// By default the trace messages are forwarded to the NONE output,
-// but can be rerouted to any device or completely suppressed, by
-// changing the definitions required in system/src/diag/trace_impl.c
-// (currently OS_USE_TRACE_ITM, OS_USE_TRACE_SEMIHOSTING_DEBUG/_STDOUT).
-//
-
-// ----- main() ---------------------------------------------------------------
-
-// Sample pragmas to cope with warnings. Please note the related line at
-// the end of this function, used to pop the compiler diagnostics status.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #pragma GCC diagnostic ignored "-Wmissing-declarations"
 #pragma GCC diagnostic ignored "-Wreturn-type"
 
-static xQueueHandle xSwitchQueue;
-static void vLedTask( void *pvParameters );
-static void vRxCenterTxNetTask( void *pvParameters);
-static void vRxNetTxCenterTask( void *pvParameters);
-//static void vSwitchTask( void *pvParameters );
-//static void vPrint( void *pvParameters );
+//Setup Hardware
 void setupUSB(void);
 void setupBSD(void);
 
+//var
+uint32_t lunghezza;
 
 int
 main(int argc, char* argv[])
@@ -67,6 +47,7 @@ main(int argc, char* argv[])
     HAL_Delay(4000);
     setupBSD();
 
+#ifdef FREERTOS_ON
     xTaskCreate( vRxCenterTxNetTask, /* Pointer to the function that implements the task. */
    	            "RicezioneCentroControllo",/* Text name for the task. For debugging only. */
    	            200,/* Stack depth in words. */
@@ -75,70 +56,17 @@ main(int argc, char* argv[])
    	            NULL /* We are not going to use the task handle. */
    	            );
     xTaskCreate( vRxNetTxCenterTask, "RicezioneNetwork", 200, NULL, tskIDLE_PRIORITY, NULL );
-    //static char printTaskNameA[] = "Task A\0";
-    //static char printTaskNameB[] = "Task B\0";
-    //xTaskCreate( vPrint, "vPrint_A", 200, (void*)&printTaskNameA, tskIDLE_PRIORITY, NULL );
-    //xTaskCreate( vPrint, "vPrint_B", 200, (void*)&printTaskNameB, tskIDLE_PRIORITY, NULL );
-
-
    /* Create the Queue for communication between the tasks */
    //	xSwitchQueue = xQueueCreate( 5, sizeof(uint8_t) );
 
    	vTaskStartScheduler();
    	for( ;; );
+#else
 
-
-}
-
-static void vRxCenterTxNetTask( void *pvParameters){
+#endif
 
 }
 
-static void vRxNetTxCenterTask( void *pvParameters){
-
-}
-
-static void vLedTask( void *pvParameters )
-{
-    uint8_t state;
-
-    for( ;; )
-    {
-        /* Wait until an element is received from the queue */
-        if (xQueueReceive(xSwitchQueue, &state, portMAX_DELAY))
-        {
-            // On button UP, toggle the LED
-            if ( state == 1 )
-                        	BSP_LED_Toggle(LED3);
-        }
-    }
-}
-
-
-static void vSwitchTask( void *pvParameters )
-{
-    uint8_t newstate,state = 0;
-
-    for( ;; )
-    {
-        if ( BSP_PB_GetState(BUTTON_KEY) != state )
-        {
-            // debounce and read again
-            vTaskDelay( 10 );
-
-            newstate = BSP_PB_GetState(BUTTON_KEY)==1;
-            if ( newstate != state )
-            {
-                state = newstate;
-                //Coda, Item, TicksToWait
-                if(newstate == 1) xQueueSend(xSwitchQueue, &newstate, 0);
-                printf("Button Pressed!\n\r");
-            }
-        }
-        // read again soon
-        vTaskDelay( 20 );
-    }
-}
 
 void setupBSD(void){
 	BSP_LED_Init(LED3);
@@ -156,12 +84,26 @@ void setupUSB(){
 }
 
 
-void vPrint( void *pvParameters ){
-	char* taskName = (char*)(pvParameters);
-	for(;;){
-		printf("%s prints this\n\r", taskName );
-		vTaskDelay(2000);
+
+
+#ifdef FREERTOS_ON
+static void vRxCenterTxNetTask( void *pvParameters){
+
+	for( ;; ){
+		if(VCP_read((uint8_t*)&lunghezza, 4)!=0){
+
+			VCP_write((uint8_t*)&lunghezza, 4);
+	//	receiving_buffer = (uint8_t*) malloc(length[0]);
+	//	if(VCP_read(receiving_buffer,length[0])!=0){
+	//		VCP_write(receiving_buffer, length[0]);
+	//	}
+		//VCP_write(receiving_buffer, 5);
+		}
 	}
+}
+
+static void vRxNetTxCenterTask( void *pvParameters){
+
 }
 
 void vApplicationMallocFailedHook( void )
@@ -206,6 +148,8 @@ void vApplicationStackOverflowHook( xTaskHandle pxTask, char *pcTaskName )
 	taskDISABLE_INTERRUPTS();
 	for( ;; );
 }
+#endif
+
 /*-----------------------------------------------------------*/
 
 #pragma GCC diagnostic pop
