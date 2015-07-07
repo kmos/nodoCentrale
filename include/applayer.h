@@ -14,6 +14,7 @@ typedef struct payload{
 	uint8_t id; 		//id sensore
 	int16_t val;		//valore
 	uint8_t alarm;		//allarme
+	int64_t timestamp;
 	int32_t ht;			//high th.shold
 	int32_t lt;			//low  th.shold
 	int16_t period;		//periodo
