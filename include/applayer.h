@@ -5,7 +5,7 @@ typedef uint8_t OpCode;
 #define CONFIGSENSOR 	((uint8_t)0x01) 		//configurazione sensore 									###	Centro Controllo -> Nodo Sensore
 #define DATA 			((uint8_t)0x02)			//dato di misurazione										###	Nodo Sensore -> Centro Controllo
 #define JOIN			((uint8_t)0x03)			//join nodo, fornisce la chiave personale del nodo e l'id	### Centro Controllo <- Nodo centrale
-#define CANJOIN			((uint8_t)0x04)			//canjoin risponde al nodo con la chiave condivisa			### Centro Controllo -> Nodo Centrale
+#define REPLYJOIN		((uint8_t)0x04)			//replyjoin risponde al nodo con la chiave condivisa			### Centro Controllo -> Nodo Centrale
 /*#####################*/
 
 #define NODOCENTRALE
@@ -14,7 +14,7 @@ typedef struct payload{
 	uint8_t id; 		//id sensore
 	int16_t val;		//valore
 	uint8_t alarm;		//allarme
-	int64_t timestamp;
+	uint32_t timestamp;
 	int32_t ht;			//high th.shold
 	int32_t lt;			//low  th.shold
 	int16_t period;		//periodo
@@ -23,10 +23,10 @@ typedef struct payload{
 
 //128 bit application package
 
-typedef struct aPPpackage{
+typedef struct netPackage{
 	OpCode 	code;
 	Payload	payload;
-} APPpackage;
+} NetPackage;
 
 
 
@@ -36,26 +36,60 @@ typedef struct aPPpackage{
 //##################################################
 
 //struttura dati in ricezione al centro di controllo
-typedef struct nodepack{
-	uint16_t address;
-	APPpackage pack;
-} Nodepack;
 
-//messaggio sicurezza join <->
-typedef struct secpack{
-	uint64_t id0;	//è necessario?
-	uint32_t id1;
-	uint64_t secret0;
-	uint64_t secret1;
-} Secpack;
+typedef struct readDataPacketType {
+  uint16_t nodeAddress;
+  uint8_t  sensorID;
+} ReadDataPacketType;
 
-//messaggio richiesta dati dal sensore ->
-typedef struct getdata{
-	uint16_t address;
-	uint8_t sensor;
-} Getdata;
+typedef struct dataPacketType {
+  uint16_t nodeAddress;
+  uint8_t  sensorID;
+  int32_t  value;
+  uint8_t  alarm;
+}DataPacketType;
+
+typedef struct configSensorType {
+  uint16_t nodeAddress;
+  uint8_t  sensorID;
+  int32_t  value;
+  uint8_t  alarm;
+  int32_t  highThreshold;
+  int32_t  lowThreshold;
+  int16_t  period;
+  int8_t   priority;
+} ConfigSensorType;
+
+typedef struct nodeIDType {
+  uint64_t id0;
+  uint32_t id1;
+} NodeIDType;
+
+typedef struct secretKeyType {
+  uint64_t sk0;
+  uint64_t sk1;
+} SecretKeyType;
+
+typedef struct canJoinPacketType {
+  NodeIDType nodeID;
+} CanJoinPacketType;
+
+typedef struct canJoinReplyPacketType {
+  NodeIDType nodeID;
+  SecretKeyType secretKey;
+} CanJoinReplyPacketType;
+
+
+
+typedef struct nodeMessage{
+	uint8_t code;
+	union {
+		ReadDataPacketType 		readDataPacket;
+		DataPacketType 			dataPacket;
+		ConfigSensorType		configSensor;
+		CanJoinPacketType		canJoinPacket;
+		CanJoinReplyPacketType	canJoinReplyPacket;
+	};
+} NodeMessage;
 
 #endif
-
-//id a 12 byte
-//indirizzi a 16 bit
