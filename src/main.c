@@ -71,12 +71,8 @@ main(int argc, char* argv[])
    	for( ;; );
 #else
 /***************Inizio parte senza freeRTOS***********/
-   	while(1){
-
-   		reciveFromCenter();
-   		HAL_Delay(1000);
-//*
-
+   	while(1) {
+   	  reciveFromCenter();
    	}
 
 
@@ -155,7 +151,7 @@ static void reciveFromCenter( ){
 
   while (VCP_read(&opcode, 1) != 1);
 
-  BSP_LED_On(LED4);
+  BSP_LED_Toggle(LED4);
 
   switch(opcode) {
     case CONFIGSENSOR:
@@ -188,12 +184,12 @@ static void reciveFromCenter( ){
 			}
 			break;
 		case READDATA:
-		  BSP_LED_On(LED5);
+		  BSP_LED_Toggle(LED5);
 
 			//invia richiesta di lettura: CC -> nodo centrale -> nodo sensore
 		  while (VCP_read((uint8_t*)&message, READDATADIM) != READDATADIM);
 
-		  BSP_LED_On(LED6);
+		  BSP_LED_Toggle(LED6);
 		 netmessage.code = message.code;
 		 netmessage.payload.id = message.Tpack.readDataPacket.sensorID;
 				/*AGGIUNTA SICUREZZA*/
