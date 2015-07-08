@@ -1,5 +1,7 @@
 // ----------------------------------------------------------------------------
 
+
+
 #include "stm32f407xx.h"
 #include "stm32f4xx_hal.h"
 #include <stdio.h>
@@ -35,6 +37,7 @@ USBD_HandleTypeDef USBD_Device;
 #pragma GCC diagnostic ignored "-Wmissing-declarations"
 #pragma GCC diagnostic ignored "-Wreturn-type"
 
+
 //Setup Hardware
 void setupUSB(void);
 void setupBSD(void);
@@ -66,6 +69,7 @@ main(int argc, char* argv[])
    	for( ;; );
 #else
 
+reciveFromCenter();
 //
 
 #endif
@@ -137,27 +141,44 @@ void vApplicationStackOverflowHook( xTaskHandle pxTask, char *pcTaskName )
 
 
 static void reciveFromCenter(){
-	//struct NodeMessage message* = malloc(sizeof(struct NodeMessage));
 
-	struct NodeMessage *message;
-	message = (NodeMessage *)malloc(sizeof(NodeMessage));
+	struct nodeMessage message;
+	struct netPackage netmessage;
 
-	if(VCP_read(&message, DIMPACK)!=0){
-		switch(message->code){
+	if(VCP_read(opcode, 1)!=0){
+		switch(opcode){
 		case READDATA:
-			//invia richiesta di lettura
+			//invia richiesta di lettura: CC -> nodo centrale -> nodo sensore
+			if(VCP_read(&message, DIMPACK)!=0){
+			netmessage.code = message.code;
+			netmessage.payload.id = message.Tpack.readDataPacket.sensorID;
+			/*AGGIUNTA SICUREZZA*/
+
+			/*INVIO RETE */
+			//SEND_MESSAGE(message->readDataPacket->nodeAddress,netmessage,...);
+
+			}
 			break;
 		case CONFIGSENSOR:
-			//invia configurazione al sensore
+			//invia configurazione al sensore: CC -> nodo centrale -> nodo sensore
+			if(VCP_read(&message, DIMPACK)!=0){
+			netmessage.code = message.code;
+			netmessage.payload.id = message.Tpack.configSensor.sensorID;
+			netmessage.payload.period=message.Tpack.configSensor.period;
+			netmessage.payload.lt=message.Tpack.configSensor.lowThreshold;
+			netmessage.payload.ht=message.Tpack.configSensor.highThreshold;
+
+			}
 			break;
 		case REPLYJOIN:
-			//risposta alla join
+			//risposta alla join:CC -> nodo centrale
+			if(VCP_read(&message, DIMPACK)!=0){
 
+			}
 			break;
 		};
 
 	}
-
 }
 
 //callback di livello rete
