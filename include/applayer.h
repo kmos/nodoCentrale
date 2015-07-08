@@ -17,7 +17,6 @@ typedef struct payload{
 	uint8_t id; 		//id sensore
 	int16_t val;		//valore
 	uint8_t alarm;		//allarme
-	uint32_t timestamp;
 	int32_t ht;			//high th.shold
 	int32_t lt;			//low  th.shold
 	int16_t period;		//periodo
@@ -38,7 +37,11 @@ typedef struct netPackage{
 //Pacchetti Centro controllo <-> Nodo Centrale
 //##################################################
 
-#define DIMPACK 232 //Dimensione
+#define READDATADIM 4 //Dimensione
+#define DATADIM 72 bit
+#define CONFSENSDIM 120
+#define JOINDIM 104
+#define JOINREPLYDIM 232
 
 typedef struct readDataPacketType {
   uint16_t nodeAddress;
@@ -55,7 +58,6 @@ typedef struct dataPacketType {
 typedef struct configSensorType {
   uint16_t nodeAddress;
   uint8_t  sensorID;
-  int32_t  value; //non serve?
   uint8_t  alarm;
   int32_t  highThreshold;
   int32_t  lowThreshold;
