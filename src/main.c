@@ -150,30 +150,42 @@ static void reciveFromCenter(){
 		case READDATA:
 			//invia richiesta di lettura: CC -> nodo centrale -> nodo sensore
 			if(VCP_read(&message, DIMPACK)!=0){
-			netmessage.code = message.code;
-			netmessage.payload.id = message.Tpack.readDataPacket.sensorID;
-			/*AGGIUNTA SICUREZZA*/
+				netmessage.code = message.code;
+				netmessage.payload.id = message.Tpack.readDataPacket.sensorID;
+				/*AGGIUNTA SICUREZZA*/
 
-			/*INVIO RETE */
-			//SEND_MESSAGE(message->readDataPacket->nodeAddress,netmessage,...);
+				/*INVIO RETE */
+				//SEND_MESSAGE(message->readDataPacket->nodeAddress,netmessage,...);
 
 			}
 			break;
 		case CONFIGSENSOR:
 			//invia configurazione al sensore: CC -> nodo centrale -> nodo sensore
 			if(VCP_read(&message, DIMPACK)!=0){
-			netmessage.code = message.code;
-			netmessage.payload.id = message.Tpack.configSensor.sensorID;
-			netmessage.payload.period=message.Tpack.configSensor.period;
-			netmessage.payload.lt=message.Tpack.configSensor.lowThreshold;
-			netmessage.payload.ht=message.Tpack.configSensor.highThreshold;
+				netmessage.code = message.code;
+				netmessage.payload.id = message.Tpack.configSensor.sensorID;
+				netmessage.payload.period=message.Tpack.configSensor.period;
+				netmessage.payload.lt=message.Tpack.configSensor.lowThreshold;
+				netmessage.payload.ht=message.Tpack.configSensor.highThreshold;
+				netmessage.payload.priority=message.Tpack.configSensor.priority;
+				netmessage.payload.alarm = message.Tpack.configSensor.alarm;
+			/*AGGIUNTA SICUREZZA */
 
+			/*INVIO RETE */
+			//SEND_MESSAGE
 			}
 			break;
 		case REPLYJOIN:
 			//risposta alla join:CC -> nodo centrale
 			if(VCP_read(&message, DIMPACK)!=0){
-
+				netmessage.code = message.code;
+				//i primi 64bit di una chiave tutti uguale a zero...IMPOSSIBILE
+				if(message.Tpack.canJoinReplyPacket.secretKey.sk0 == 0){
+					//Risposta alla join -NEGATIVA
+				}
+				else{
+					//Risposta alla join - POSITIVA
+				}
 			}
 			break;
 		};
@@ -181,8 +193,9 @@ static void reciveFromCenter(){
 	}
 }
 
-//callback di livello rete
+//callback di livello rete almeno così mi hanno detto x test si può usare uart
 static void reciveFromNet(){
+
 
 }
 #endif
