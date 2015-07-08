@@ -37,6 +37,13 @@ typedef struct netPackage{
 //Pacchetti Centro controllo <-> Nodo Centrale
 //##################################################
 
+#define READDATA_DIM 3 //Dimensione
+#define DATA_DIM 13
+#define CONFSENSDIM 14
+#define JOINDIM 12
+#define JOINREPLYDIM 28
+
+
 typedef struct readDataPacketType {
   uint16_t nodeAddress;
   uint8_t  sensorID;
