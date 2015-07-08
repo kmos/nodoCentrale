@@ -155,49 +155,64 @@ static void reciveFromCenter( ){
 
   switch(opcode) {
     case CONFIGSENSOR:
-			//invia configurazione al sensore: CC -> nodo centrale -> nodo sensore
-			if(VCP_read(&message, CONFSENSDIM)!=0){
-				netmessage.code = message.code;
-				netmessage.payload.id = message.Tpack.configSensor.sensorID;
-				netmessage.payload.period=message.Tpack.configSensor.period;
-				netmessage.payload.lt=message.Tpack.configSensor.lowThreshold;
-				netmessage.payload.ht=message.Tpack.configSensor.highThreshold;
-				netmessage.payload.priority=message.Tpack.configSensor.priority;
-				netmessage.payload.alarm = message.Tpack.configSensor.alarm;
+      //invia configurazione al sensore: CC -> nodo centrale -> nodo sensore
+      if (VCP_read(&message, CONFSENSDIM) != 0) {
+        netmessage.code = message.code;
+        netmessage.payload.id = message.Tpack.configSensor.sensorID;
+        netmessage.payload.period=message.Tpack.configSensor.period;
+        netmessage.payload.lt=message.Tpack.configSensor.lowThreshold;
+        netmessage.payload.ht=message.Tpack.configSensor.highThreshold;
+        netmessage.payload.priority=message.Tpack.configSensor.priority;
+        netmessage.payload.alarm = message.Tpack.configSensor.alarm;
 			/*AGGIUNTA SICUREZZA */
 
 			/*INVIO RETE */
 			//SEND_MESSAGE
-			}
-			break;
-		case REPLYJOIN:
-			//risposta alla join:CC -> nodo centrale
-			if(VCP_read(&message, JOINREPLYDIM)!=0){
-				netmessage.code = message.code;
-				//i primi 64bit di una chiave tutti uguale a zero...IMPOSSIBILE
-				if(message.Tpack.canJoinReplyPacket.secretKey.sk0 == 0){
-					//Risposta alla join -NEGATIVA
-				}
-				else{
-					//Risposta alla join - POSITIVA
-				}
-			}
-			break;
-		case READDATA:
-		  BSP_LED_Toggle(LED5);
+      }
 
-			//invia richiesta di lettura: CC -> nodo centrale -> nodo sensore
-		  while (VCP_read((uint8_t*)&message, READDATADIM) != READDATADIM);
+      break;
 
-		  BSP_LED_Toggle(LED6);
-		 netmessage.code = message.code;
-		 netmessage.payload.id = message.Tpack.readDataPacket.sensorID;
-				/*AGGIUNTA SICUREZZA*/
+    case REPLYJOIN:
+      //risposta alla join:CC -> nodo centrale
+      if (VCP_read(&message, JOINREPLYDIM) != 0) {
+        netmessage.code = message.code;
+        //i primi 64bit di una chiave tutti uguale a zero...IMPOSSIBILE
+        if(message.Tpack.canJoinReplyPacket.secretKey.sk0 == 0) {
+          //Risposta alla join -NEGATIVA
+        } else {
+          //Risposta alla join - POSITIVA
+        }
+      }
 
-				/*INVIO RETE */
-				//SEND_MESSAGE(message->readDataPacket->nodeAddress,netmessage,...);
-			break;
-		};
+      break;
+
+    case READDATA:
+      BSP_LED_Toggle(LED5);
+
+      //invia richiesta di lettura: CC -> nodo centrale -> nodo sensore
+      while (VCP_read((uint8_t*)&message, READDATA_DIM) != READDATA_DIM);
+
+      BSP_LED_Toggle(LED6);
+
+      NodeMessage reply;
+      reply.code = DATA;
+      reply.Tpack.dataPacket.nodeAddress = message.Tpack.readDataPacket.nodeAddress;
+      reply.Tpack.dataPacket.sensorID = 0;
+      reply.Tpack.dataPacket.value = 7;
+      reply.Tpack.dataPacket.alarm = 0;
+
+      while (VCP_write((uint8_t*)&reply, DATA_DIM) != DATA_DIM);
+
+      /*netmessage.code = message.code;
+       * netmessage.payload.id = message.Tpack.readDataPacket.sensorID;*/
+
+      /*AGGIUNTA SICUREZZA*/
+
+      /*INVIO RETE */
+      //SEND_MESSAGE(message->readDataPacket->nodeAddress,netmessage,...);
+
+      break;
+  }
 }
 
 //callback di livello rete almeno così mi hanno detto x test si può usare uart
