@@ -37,7 +37,7 @@ typedef struct netPackage{
 //Pacchetti Centro controllo <-> Nodo Centrale
 //##################################################
 
-#define READDATADIM 4 //Dimensione
+#define READDATADIM 3 //Dimensione
 #define DATADIM 72 bit
 #define CONFSENSDIM 120
 #define JOINDIM 104
