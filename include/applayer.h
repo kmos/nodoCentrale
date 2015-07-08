@@ -8,6 +8,7 @@ typedef uint8_t OpCode;
 #define REPLYJOIN		((uint8_t)0x04)			//replyjoin risponde al nodo con la chiave condivisa			### Centro Controllo -> Nodo Centrale
 /*#####################*/
 
+
 #define NODOCENTRALE
 
 typedef struct payload{
@@ -35,7 +36,7 @@ typedef struct netPackage{
 //Pacchetti Centro controllo <-> Nodo Centrale
 //##################################################
 
-//struttura dati in ricezione al centro di controllo
+#define DIMPACK 232 //Dimensione
 
 typedef struct readDataPacketType {
   uint16_t nodeAddress;
