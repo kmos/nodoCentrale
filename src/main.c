@@ -54,6 +54,8 @@ main(int argc, char* argv[])
     setupBSD();
 
 #ifdef FREERTOS_ON
+/***************Inizio parte con freeRTOS**************/
+
     xTaskCreate( vRxCenterTxNetTask, /* Pointer to the function that implements the task. */
    	            "RicezioneCentroControllo",/* Text name for the task. For debugging only. */
    	            200,/* Stack depth in words. */
@@ -68,12 +70,16 @@ main(int argc, char* argv[])
    	vTaskStartScheduler();
    	for( ;; );
 #else
+/***************Inizio parte senza freeRTOS***********/
+   	while(1){
 
-reciveFromCenter();
-//
+   		reciveFromCenter();
+//*
+
+   	}
+
 
 #endif
-
 }
 
 
@@ -142,26 +148,14 @@ void vApplicationStackOverflowHook( xTaskHandle pxTask, char *pcTaskName )
 
 static void reciveFromCenter(){
 
-	struct nodeMessage message;
-	struct netPackage netmessage;
+	NodeMessage message;
+	NetPackage netmessage;
 
-	if(VCP_read(opcode, 1)!=0){
+	if(VCP_read(&opcode, 1)!=0){
 		switch(opcode){
-		case READDATA:
-			//invia richiesta di lettura: CC -> nodo centrale -> nodo sensore
-			if(VCP_read(&message, DIMPACK)!=0){
-				netmessage.code = message.code;
-				netmessage.payload.id = message.Tpack.readDataPacket.sensorID;
-				/*AGGIUNTA SICUREZZA*/
-
-				/*INVIO RETE */
-				//SEND_MESSAGE(message->readDataPacket->nodeAddress,netmessage,...);
-
-			}
-			break;
 		case CONFIGSENSOR:
 			//invia configurazione al sensore: CC -> nodo centrale -> nodo sensore
-			if(VCP_read(&message, DIMPACK)!=0){
+			if(VCP_read(&message, CONFSENSDIM)!=0){
 				netmessage.code = message.code;
 				netmessage.payload.id = message.Tpack.configSensor.sensorID;
 				netmessage.payload.period=message.Tpack.configSensor.period;
@@ -177,7 +171,7 @@ static void reciveFromCenter(){
 			break;
 		case REPLYJOIN:
 			//risposta alla join:CC -> nodo centrale
-			if(VCP_read(&message, DIMPACK)!=0){
+			if(VCP_read(&message, JOINREPLYDIM)!=0){
 				netmessage.code = message.code;
 				//i primi 64bit di una chiave tutti uguale a zero...IMPOSSIBILE
 				if(message.Tpack.canJoinReplyPacket.secretKey.sk0 == 0){
@@ -188,6 +182,17 @@ static void reciveFromCenter(){
 				}
 			}
 			break;
+		case READDATA:
+			//invia richiesta di lettura: CC -> nodo centrale -> nodo sensore
+			if(VCP_read((uint8_t*)&message, 4)!=0){
+				netmessage.code = message.code;
+				netmessage.payload.id = message.Tpack.readDataPacket.sensorID;
+				/*AGGIUNTA SICUREZZA*/
+
+				/*INVIO RETE */
+				//SEND_MESSAGE(message->readDataPacket->nodeAddress,netmessage,...);
+			}
+			break;
 		};
 
 	}
@@ -195,7 +200,11 @@ static void reciveFromCenter(){
 
 //callback di livello rete almeno così mi hanno detto x test si può usare uart
 static void reciveFromNet(){
+	struct nodeMessage message;
+	struct netPackage netmessage;
 
+	//ricezione dato dalla net
+	//
 
 }
 #endif
