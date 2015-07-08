@@ -24,14 +24,14 @@ typedef struct payload{
 	int8_t  priority;	//priorità
 } Payload;
 
-//128 bit application package
+
 
 typedef struct netPackage{
 	OpCode 	code;
 	Payload	payload;
 } NetPackage;
 
-
+//160 bit application package for the net
 
 #ifdef NODOCENTRALE
 //###################################################
@@ -55,7 +55,7 @@ typedef struct dataPacketType {
 typedef struct configSensorType {
   uint16_t nodeAddress;
   uint8_t  sensorID;
-  int32_t  value;
+  int32_t  value; //non serve?
   uint8_t  alarm;
   int32_t  highThreshold;
   int32_t  lowThreshold;
