@@ -74,6 +74,7 @@ main(int argc, char* argv[])
    	while(1){
 
    		reciveFromCenter();
+   		HAL_Delay(1000);
 //*
 
    	}
@@ -84,7 +85,7 @@ main(int argc, char* argv[])
 
 
 void setupBSD(void){
-	BSP_LED_Init(LED3);
+    BSP_LED_Init(LED3);
     BSP_LED_Init(LED4);
     BSP_LED_Init(LED5);
     BSP_LED_Init(LED6);
@@ -146,14 +147,18 @@ void vApplicationStackOverflowHook( xTaskHandle pxTask, char *pcTaskName )
 
 
 
-static void reciveFromCenter(){
+static void reciveFromCenter( ){
+  NodeMessage message;
+  NetPackage netmessage;
 
-	NodeMessage message;
-	NetPackage netmessage;
+  BSP_LED_Toggle(LED3);
 
-	if(VCP_read(&opcode, 1)!=0){
-		switch(opcode){
-		case CONFIGSENSOR:
+  while (VCP_read(&opcode, 1) != 1);
+
+  BSP_LED_On(LED4);
+
+  switch(opcode) {
+    case CONFIGSENSOR:
 			//invia configurazione al sensore: CC -> nodo centrale -> nodo sensore
 			if(VCP_read(&message, CONFSENSDIM)!=0){
 				netmessage.code = message.code;
@@ -183,19 +188,20 @@ static void reciveFromCenter(){
 			}
 			break;
 		case READDATA:
+		  BSP_LED_On(LED5);
+
 			//invia richiesta di lettura: CC -> nodo centrale -> nodo sensore
-			if(VCP_read((uint8_t*)&message, 4)!=0){
-				netmessage.code = message.code;
-				netmessage.payload.id = message.Tpack.readDataPacket.sensorID;
+		  while (VCP_read((uint8_t*)&message, READDATADIM) != READDATADIM);
+
+		  BSP_LED_On(LED6);
+		 netmessage.code = message.code;
+		 netmessage.payload.id = message.Tpack.readDataPacket.sensorID;
 				/*AGGIUNTA SICUREZZA*/
 
 				/*INVIO RETE */
 				//SEND_MESSAGE(message->readDataPacket->nodeAddress,netmessage,...);
-			}
 			break;
 		};
-
-	}
 }
 
 //callback di livello rete almeno così mi hanno detto x test si può usare uart
