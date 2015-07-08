@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
-
-
+#define TESTING
+//#define FREERTOS_ON
 
 #include "stm32f407xx.h"
 #include "stm32f4xx_hal.h"
@@ -147,16 +147,23 @@ static void reciveFromCenter( ){
   NodeMessage message;
   NetPackage netmessage;
 
+#ifdef TESTING
+  NodeMessage reply;
   BSP_LED_Toggle(LED3);
+#endif
+
+
 
   while (VCP_read(&opcode, 1) != 1);
 
+#ifdef TESTING
   BSP_LED_Toggle(LED4);
+#endif
 
   switch(opcode) {
     case CONFIGSENSOR:
       //invia configurazione al sensore: CC -> nodo centrale -> nodo sensore
-      if (VCP_read(&message, CONFSENSDIM) != 0) {
+    	while (VCP_read((uint8_t*)&message, CONFSENSDIM) != CONFSENSDIM);
         netmessage.code = message.code;
         netmessage.payload.id = message.Tpack.configSensor.sensorID;
         netmessage.payload.period=message.Tpack.configSensor.period;
@@ -168,33 +175,44 @@ static void reciveFromCenter( ){
 
 			/*INVIO RETE */
 			//SEND_MESSAGE
-      }
+
 
       break;
 
     case REPLYJOIN:
       //risposta alla join:CC -> nodo centrale
-      if (VCP_read(&message, JOINREPLYDIM) != 0) {
+    	while (VCP_read((uint8_t*)&message, JOINREPLYDIM) != JOINREPLYDIM);
         netmessage.code = message.code;
         //i primi 64bit di una chiave tutti uguale a zero...IMPOSSIBILE
+		//ALL'ARRIVO DELLA REPLY SE I PRIMI 64BIT DELLA KEY SONO UGUALI A 0 VUOL DIRE CHE E' FALLITO
+		//IL JOIN, DI CONSEGUENZA IL NODO NON E' PRESENTE NELLA LISTA, VICEVERSA SE E' PRESENTE UNA KEY, ATTRAVERSO
+		//QUELLA SI EFFETTUA LA JOIN RISPONDENDO TRAMITE UNA REPLY
+#ifdef TESTING
+
+      reply.code = JOIN;
+      reply.Tpack.canJoinPacket.nodeID = message.Tpack.canJoinReplyPacket.nodeID;
+
+      while (VCP_write((uint8_t*)&reply, sizeof(CanJoinPacketType)) != sizeof(CanJoinPacketType));
+#endif
+
         if(message.Tpack.canJoinReplyPacket.secretKey.sk0 == 0) {
           //Risposta alla join -NEGATIVA
         } else {
           //Risposta alla join - POSITIVA
         }
-      }
+
 
       break;
 
     case READDATA:
-      BSP_LED_Toggle(LED5);
-
       //invia richiesta di lettura: CC -> nodo centrale -> nodo sensore
       while (VCP_read((uint8_t*)&message, READDATA_DIM) != READDATA_DIM);
+      netmessage.code = READDATA;
+      netmessage.payload.id = message.Tpack.readDataPacket.sensorID;
 
+#ifdef TESTING
+      BSP_LED_Toggle(LED5);
       BSP_LED_Toggle(LED6);
-
-      NodeMessage reply;
       reply.code = DATA;
       reply.Tpack.dataPacket.nodeAddress = message.Tpack.readDataPacket.nodeAddress;
       reply.Tpack.dataPacket.sensorID = 0;
@@ -202,7 +220,7 @@ static void reciveFromCenter( ){
       reply.Tpack.dataPacket.alarm = 0;
 
       while (VCP_write((uint8_t*)&reply, DATA_DIM) != DATA_DIM);
-
+#endif
       /*netmessage.code = message.code;
        * netmessage.payload.id = message.Tpack.readDataPacket.sensorID;*/
 
@@ -210,19 +228,38 @@ static void reciveFromCenter( ){
 
       /*INVIO RETE */
       //SEND_MESSAGE(message->readDataPacket->nodeAddress,netmessage,...);
-
       break;
   }
 }
 
+
 //callback di livello rete almeno così mi hanno detto x test si può usare uart
 static void reciveFromNet(){
-	struct nodeMessage message;
-	struct netPackage netmessage;
+	NodeMessage message;
+	NetPackage netmessage;
 
 	//ricezione dato dalla net
 	//
 
+	switch(netmessage.code){
+		case JOIN:
+			message.code = JOIN;
+			//message.Tpack.canJoinPacket.nodeID = FORNITO DAL PACCHETTO LIVELLO SICUREZZA
+			//LA LOGICA DI JOIN NON VIENE IMPLEMENTATA DIRETTAMENTE QUI MA BENSI' NELLA REPLY
+			//ALL'ARRIVO DELLA REPLY SE I PRIMI 64BIT DELLA KEY SONO UGUALI A 0 VUOL DIRE CHE E' FALLITO
+			//IL JOIN, DI CONSEGUENZA IL NODO NON E' PRESENTE NELLA LISTA, VICEVERSA SE E' PRESENTE UNA KEY, ATTRAVERSO
+			//QUELLA SI EFFETTUA LA JOIN RISPONDENDO TRAMITE UNA REPLY
+			while (VCP_write((uint8_t*)&message, sizeof(CanJoinPacketType)) != sizeof(CanJoinPacketType));
+		break;
+		case DATA:
+			//controllo ******SICUREZZA******
+			message.code = DATA;
+			message.Tpack.dataPacket.alarm = netmessage.payload.alarm;
+			message.Tpack.dataPacket.sensorID = netmessage.payload.id;
+			message.Tpack.dataPacket.value = netmessage.payload.val;
+			//message.Tpack.dataPacket.nodeAddress = FORNITO DAL PACCHETTO LIVELLO SICUREZZA
+			while (VCP_write((uint8_t*)&message, sizeof(DataPacketType)) != sizeof(DataPacketType));
+	}
 }
 #endif
 
