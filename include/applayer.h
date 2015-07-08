@@ -1,4 +1,6 @@
 
+#define NODOCENTRALE
+
 /*######OPCODE##########*/
 typedef uint8_t OpCode;
 #define READDATA 		((uint8_t)0x00) 		//invia misurazione al centro di controllo 					###	Centro Controllo -> Nodo Sensore
@@ -9,7 +11,7 @@ typedef uint8_t OpCode;
 /*#####################*/
 
 
-#define NODOCENTRALE
+
 
 typedef struct payload{
 	uint8_t id; 		//id sensore
@@ -20,7 +22,7 @@ typedef struct payload{
 	int32_t lt;			//low  th.shold
 	int16_t period;		//periodo
 	int8_t  priority;	//priorità
-}Payload;
+} Payload;
 
 //128 bit application package
 
@@ -31,7 +33,7 @@ typedef struct netPackage{
 
 
 
-#ifdef 	NODOCENTRALE
+#ifdef NODOCENTRALE
 //###################################################
 //Pacchetti Centro controllo <-> Nodo Centrale
 //##################################################
@@ -90,7 +92,7 @@ typedef struct nodeMessage{
 		ConfigSensorType		configSensor;
 		CanJoinPacketType		canJoinPacket;
 		CanJoinReplyPacketType	canJoinReplyPacket;
-	};
+	} Tpack;
 } NodeMessage;
-
 #endif
+
