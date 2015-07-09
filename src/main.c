@@ -28,6 +28,8 @@ void setupUSB(){
   USBD_Start(&USBD_Device);
 }
 
+void onCanJoinReply(NodeIDType id, SecretKeyType key, uint16_t address);
+
 void exampleOnCanJoinReply(NodeIDType nodeID, SecretKeyType key, uint16_t nodeAddress) {
   join(nodeID);
 }
@@ -60,16 +62,15 @@ void receiveFromCenter() {
     return;
   }
 
-  NodeMessage message;
-
   switch(opcode) {
-    case CONFIGSENSOR:
+    case CONFIGSENSOR: {
       ConfigSensorType configSensorPacket;
       while (VCP_read((uint8_t*)&configSensorPacket, CONFSENS_DIM) != CONFSENS_DIM);
 
-      // XXX: Invia configurazione al nodo sensore.
+      sendConfigSensor(&configSensorPacket);
 
       break;
+    }
 
     case CANJOINREPLY: {
       CanJoinReplyPacketType canJoinReplyPacket;
@@ -84,18 +85,7 @@ void receiveFromCenter() {
       ReadDataPacketType readDataPacket;
       while (VCP_read((uint8_t*)&readDataPacket, READDATA_DIM) != READDATA_DIM);
 
-      NodeMessage* reply = (NodeMessage*)malloc(sizeof(NodeMessage));
-      reply->code = DATA;
-      reply->Tpack.dataPacket.nodeAddress = readDataPacket.nodeAddress;
-      reply->Tpack.dataPacket.sensorID = 0;
-      reply->Tpack.dataPacket.timestamp = 666;
-      reply->Tpack.dataPacket.value = 7;
-      reply->Tpack.dataPacket.alarm = 0;
-      reply->length = DATA_DIM;
-
-      MessageQueuePush(reply);
-
-      // XXX: Invio comando al nodo sensore.
+      sendReadData(&readDataPacket);
 
       break;
     }
