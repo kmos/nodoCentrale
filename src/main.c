@@ -29,8 +29,8 @@ static void reciveFromCenter();
 static void reciveFromNet();
 #endif
 
-void setCanJoinCallback(void (*callback)(NodeIDType, SecretKeyType));
-void exampleCanJoinCallback(NodeIDType nodeID, SecretKeyType key);
+void setCanJoinCallback(void (*callback)(NodeIDType, SecretKeyType, uint16_t nodeAddress));
+void exampleCanJoinCallback(NodeIDType nodeID, SecretKeyType key, uint16_t nodeAddress);
 
 //usb handler
 USBD_HandleTypeDef USBD_Device;
@@ -181,9 +181,9 @@ NodeMessage* MessageQueuePop() {
   return msg;
 }
 
-void (*canJoinCallback)(NodeIDType, SecretKeyType) = 0;
+void (*canJoinCallback)(NodeIDType, SecretKeyType, uint16_t) = 0;
 
-void setCanJoinCallback(void (*callback)(NodeIDType, SecretKeyType)) {
+void setCanJoinCallback(void (*callback)(NodeIDType, SecretKeyType, uint16_t)) {
   canJoinCallback = callback;
 }
 
@@ -205,7 +205,7 @@ void join(NodeIDType nodeID) {
   MessageQueuePush(msg);
 }
 
-void exampleCanJoinCallback(NodeIDType nodeID, SecretKeyType key) {
+void exampleCanJoinCallback(NodeIDType nodeID, SecretKeyType key, uint16_t nodeAddress) {
   BSP_LED_Toggle(LED4);
   join(nodeID);
 }
