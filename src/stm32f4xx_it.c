@@ -29,8 +29,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_it.h"
-#include "FreeRTOS.h"
-#include "task.h"
 #include "applayer.h"
 
 /* Private typedef -----------------------------------------------------------*/
@@ -39,7 +37,6 @@ extern PCD_HandleTypeDef hpcd;
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
-extern void xPortSysTickHandler(void);
 
 
 /**
@@ -49,10 +46,6 @@ extern void xPortSysTickHandler(void);
   */
 void SysTick_Handler(void)
 {
-  if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED)
-  {
-    xPortSysTickHandler();
-  }
   HAL_IncTick();
 }
 
