@@ -141,6 +141,22 @@ void vApplicationStackOverflowHook( xTaskHandle pxTask, char *pcTaskName )
 }
 #else
 
+void canJoin(NodeIDType nodeID, SecretKeyType (*callback)(void)) {
+  NodeMessage msg;
+  msg.code = CANJOIN;
+  msg.Tpack.canJoinPacket.nodeID = nodeID;
+
+  while (VCP_write((uint8_t*)&msg, CANJOIN_DIM) != CANJOIN_DIM);
+}
+
+void join(NodeIDType nodeID) {
+  NodeMessage msg;
+  msg.code = JOIN;
+  msg.Tpack.joinPacket.nodeID = nodeID;
+
+  while (VCP_write((uint8_t*)&msg, JOIN_DIM) != JOIN_DIM);
+}
+
 static void reciveFromCenter( ){
   NodeMessage message;
   NetPackage netmessage;
@@ -185,11 +201,7 @@ static void reciveFromCenter( ){
 		//IL JOIN, DI CONSEGUENZA IL NODO NON E' PRESENTE NELLA LISTA, VICEVERSA SE E' PRESENTE UNA KEY, ATTRAVERSO
 		//QUELLA SI EFFETTUA LA JOIN RISPONDENDO TRAMITE UNA REPLY
 #ifdef TESTING
-
-      reply.code = JOIN;
-      reply.Tpack.joinPacket.nodeID = message.Tpack.canJoinReplyPacket.nodeID;
-
-      while (VCP_write((uint8_t*)&reply, JOIN_DIM) != JOIN_DIM);
+      join(message.Tpack.canJoinReplyPacket.nodeID);
 #endif
 
         if(message.Tpack.canJoinReplyPacket.secretKey.sk0 == 0) {
@@ -220,12 +232,10 @@ static void reciveFromCenter( ){
 
       while (VCP_write((uint8_t*)&reply, DATA_DIM) != DATA_DIM);
 
-      NodeMessage reply2;
-      reply2.code = CANJOIN;
-      reply2.Tpack.canJoinPacket.nodeID.id0 = 0;
-      reply2.Tpack.canJoinPacket.nodeID.id1 = 0;
-
-      while (VCP_write((uint8_t*)&reply2, CANJOIN_DIM) != CANJOIN_DIM);
+      NodeIDType nodeID;
+      nodeID.id0 = 0;
+      nodeID.id1 = 0;
+      canJoin(nodeID, 0);
 
       BSP_LED_Toggle(LED6);
 #endif
