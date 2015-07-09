@@ -101,6 +101,10 @@ typedef struct __attribute__((aligned(1),packed)) {
     CanJoinReplyPacketType canJoinReplyPacket;
     JoinPacketType         joinPacket;
   } Tpack;
+  uint16_t length;
 } NodeMessage;
+
+void canJoin(NodeIDType nodeID);
+
 #endif
 

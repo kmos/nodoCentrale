@@ -238,7 +238,7 @@ static void reciveFromCenter( ) {
     free(toSend);
   }
 
-  while (VCP_read(&opcode, 1) != 1);
+  if (VCP_read(&opcode, 1) != 1);
 
   switch(opcode) {
     case CONFIGSENSOR:
