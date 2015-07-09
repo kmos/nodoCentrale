@@ -10,30 +10,8 @@
 #include "queue.h"
 #include "applayer.h"
 
-void receiveFromCenter();
-
-void setCanJoinCallback(void (*callback)(NodeIDType, SecretKeyType, uint16_t nodeAddress));
-void exampleOnCanJoinReply(NodeIDType nodeID, SecretKeyType key, uint16_t nodeAddress);
-
 // USB handle
 USBD_HandleTypeDef USBD_Device;
-
-// Setup hardware
-void setupUSB(void);
-void setupBSP(void);
-
-int main(int argc, char* argv[]) {
-  HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
-  setupUSB();
-  HAL_Delay(4000);
-  setupBSP();
-
-  setCanJoinCallback(exampleOnCanJoinReply);
-
-  while (1) {
-    receiveFromCenter();
-  }
-}
 
 void setupBSP(void){
   BSP_LED_Init(LED3);
@@ -50,32 +28,7 @@ void setupUSB(){
   USBD_Start(&USBD_Device);
 }
 
-void (*canJoinCallback)(NodeIDType, SecretKeyType, uint16_t) = 0;
-
-void setCanJoinCallback(void (*callback)(NodeIDType, SecretKeyType, uint16_t)) {
-  canJoinCallback = callback;
-}
-
-void canJoin(NodeIDType nodeID) {
-  NodeMessage* msg = (NodeMessage*)malloc(sizeof(NodeMessage));
-  msg->code = CANJOIN;
-  msg->Tpack.canJoinPacket.nodeID = nodeID;
-  msg->length = CANJOIN_DIM;
-
-  MessageQueuePush(msg);
-}
-
-void join(NodeIDType nodeID) {
-  NodeMessage* msg = (NodeMessage*)malloc(sizeof(NodeMessage));
-  msg->code = JOIN;
-  msg->Tpack.joinPacket.nodeID = nodeID;
-  msg->length = JOIN_DIM;
-
-  MessageQueuePush(msg);
-}
-
-void exampleCanJoinCallback(NodeIDType nodeID, SecretKeyType key, uint16_t nodeAddress) {
-  BSP_LED_Toggle(LED4);
+void exampleOnCanJoinReply(NodeIDType nodeID, SecretKeyType key, uint16_t nodeAddress) {
   join(nodeID);
 }
 
@@ -121,7 +74,7 @@ void receiveFromCenter() {
       CanJoinReplyPacketType canJoinReplyPacket;
       while (VCP_read((uint8_t*)(&canJoinReplyPacket), CANJOINREPLY_DIM) != CANJOINREPLY_DIM);
 
-      canJoinCallback(canJoinReplyPacket.nodeID, canJoinReplyPacket.secretKey, canJoinReplyPacket.nodeAddress);
+      callCanJoinCallback(canJoinReplyPacket.nodeID, canJoinReplyPacket.secretKey, canJoinReplyPacket.nodeAddress);
 
       break;
     }
@@ -145,5 +98,18 @@ void receiveFromCenter() {
 
       break;
     }
+  }
+}
+
+int main(int argc, char* argv[]) {
+  HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
+  setupUSB();
+  HAL_Delay(4000);
+  setupBSP();
+
+  setCanJoinCallback(exampleOnCanJoinReply);
+
+  while (1) {
+    receiveFromCenter();
   }
 }

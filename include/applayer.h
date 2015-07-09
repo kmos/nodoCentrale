@@ -105,7 +105,10 @@ typedef struct __attribute__((aligned(1),packed)) {
   uint16_t length;
 } NodeMessage;
 
+void setCanJoinCallback(void (*callback)(NodeIDType, SecretKeyType, uint16_t nodeAddress));
+void callCanJoinCallback(NodeIDType nodeID, SecretKeyType secretKey, uint16_t nodeAddress);
 void canJoin(NodeIDType nodeID);
+void join(NodeIDType nodeID);
 
 #endif
 
