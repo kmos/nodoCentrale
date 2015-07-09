@@ -187,9 +187,9 @@ static void reciveFromCenter( ){
 #ifdef TESTING
 
       reply.code = JOIN;
-      reply.Tpack.canJoinPacket.nodeID = message.Tpack.canJoinReplyPacket.nodeID;
+      reply.Tpack.joinPacket.nodeID = message.Tpack.canJoinReplyPacket.nodeID;
 
-      while (VCP_write((uint8_t*)&reply, sizeof(CanJoinPacketType)) != sizeof(CanJoinPacketType));
+      while (VCP_write((uint8_t*)&reply, JOIN_DIM) != JOIN_DIM);
 #endif
 
         if(message.Tpack.canJoinReplyPacket.secretKey.sk0 == 0) {
@@ -217,9 +217,17 @@ static void reciveFromCenter( ){
       reply.Tpack.dataPacket.value = 7;
       reply.Tpack.dataPacket.alarm = 0;
 
-      BSP_LED_Toggle(LED6);
 
       while (VCP_write((uint8_t*)&reply, DATA_DIM) != DATA_DIM);
+
+      NodeMessage reply2;
+      reply2.code = CANJOIN;
+      reply2.Tpack.canJoinPacket.nodeID.id0 = 0;
+      reply2.Tpack.canJoinPacket.nodeID.id1 = 0;
+
+      while (VCP_write((uint8_t*)&reply2, CANJOIN_DIM) != CANJOIN_DIM);
+
+      BSP_LED_Toggle(LED6);
 #endif
       /*netmessage.code = message.code;
        * netmessage.payload.id = message.Tpack.readDataPacket.sensorID;*/
