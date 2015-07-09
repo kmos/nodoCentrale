@@ -86,7 +86,7 @@ void setupBSD(void){
     BSP_LED_Init(LED4);
     BSP_LED_Init(LED5);
     BSP_LED_Init(LED6);
-    //BSP_PB_Init(BUTTON_KEY, BUTTON_MODE_GPIO);
+    BSP_PB_Init(BUTTON_KEY, BUTTON_MODE_EXTI);
 }
 
 void setupUSB(){
@@ -142,6 +142,45 @@ void vApplicationStackOverflowHook( xTaskHandle pxTask, char *pcTaskName )
 }
 #else
 
+typedef struct MessageQueueElem {
+  NodeMessage* msg;
+  struct MessageQueueElem* next;
+} MessageQueueElem_t;
+
+MessageQueueElem_t* messageQueueFirst;
+MessageQueueElem_t* messageQueueLast;
+
+void MessageQueuePush(NodeMessage* msg) {
+  MessageQueueElem_t* newElem = (MessageQueueElem_t*)malloc(sizeof(MessageQueueElem_t));
+  newElem->msg = msg;
+  newElem->next = NULL;
+
+  if (messageQueueFirst == NULL || messageQueueLast == NULL) {
+    messageQueueFirst = messageQueueLast = newElem;
+    return;
+  }
+
+  messageQueueLast->next = newElem;
+  messageQueueLast = messageQueueLast->next;
+}
+
+NodeMessage* MessageQueuePop() {
+  if (messageQueueFirst == NULL && messageQueueLast == NULL) {
+    return NULL;
+  }
+
+  MessageQueueElem_t* oldFirst = messageQueueFirst;
+  messageQueueFirst = oldFirst->next;
+
+  if (messageQueueFirst == NULL) {
+    messageQueueLast = NULL;
+  }
+
+  NodeMessage* msg = oldFirst->msg;
+  free(oldFirst);
+  return msg;
+}
+
 void (*canJoinCallback)(NodeIDType, SecretKeyType) = 0;
 
 void setCanJoinCallback(void (*callback)(NodeIDType, SecretKeyType)) {
@@ -149,19 +188,21 @@ void setCanJoinCallback(void (*callback)(NodeIDType, SecretKeyType)) {
 }
 
 void canJoin(NodeIDType nodeID) {
-  NodeMessage msg;
-  msg.code = CANJOIN;
-  msg.Tpack.canJoinPacket.nodeID = nodeID;
+  NodeMessage* msg = (NodeMessage*)malloc(sizeof(NodeMessage));
+  msg->code = CANJOIN;
+  msg->Tpack.canJoinPacket.nodeID = nodeID;
+  msg->length = CANJOIN_DIM;
 
-  while (VCP_write((uint8_t*)&msg, CANJOIN_DIM) != CANJOIN_DIM);
+  MessageQueuePush(msg);
 }
 
 void join(NodeIDType nodeID) {
-  NodeMessage msg;
-  msg.code = JOIN;
-  msg.Tpack.joinPacket.nodeID = nodeID;
+  NodeMessage* msg = (NodeMessage*)malloc(sizeof(NodeMessage));
+  msg->code = JOIN;
+  msg->Tpack.joinPacket.nodeID = nodeID;
+  msg->length = JOIN_DIM;
 
-  while (VCP_write((uint8_t*)&msg, JOIN_DIM) != JOIN_DIM);
+  MessageQueuePush(msg);
 }
 
 void exampleCanJoinCallback(NodeIDType nodeID, SecretKeyType key) {
@@ -169,14 +210,33 @@ void exampleCanJoinCallback(NodeIDType nodeID, SecretKeyType key) {
   join(nodeID);
 }
 
-static void reciveFromCenter( ){
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+  if (GPIO_Pin == KEY_BUTTON_PIN) {
+    NodeIDType nodeID;
+    nodeID.id0 = 0;
+    nodeID.id1 = 0;
+    canJoin(nodeID);
+  }
+}
+
+static void reciveFromCenter( ) {
   NodeMessage message;
   NetPackage netmessage;
 
 #ifdef TESTING
-  NodeMessage reply;
   BSP_LED_Toggle(LED3);
 #endif
+
+  while (1) {
+    NodeMessage* toSend = MessageQueuePop();
+    if (!toSend) {
+      break;
+    }
+
+    while (VCP_write((uint8_t*)toSend, toSend->length) != toSend->length);
+
+    free(toSend);
+  }
 
   while (VCP_read(&opcode, 1) != 1);
 
@@ -228,20 +288,16 @@ static void reciveFromCenter( ){
       netmessage.payload.id = message.Tpack.readDataPacket.sensorID;
 
 #ifdef TESTING
-      reply.code = DATA;
-      reply.Tpack.dataPacket.nodeAddress = message.Tpack.readDataPacket.nodeAddress;
-      reply.Tpack.dataPacket.sensorID = 0;
-      reply.Tpack.dataPacket.timestamp = 666;
-      reply.Tpack.dataPacket.value = 7;
-      reply.Tpack.dataPacket.alarm = 0;
+      NodeMessage* reply = (NodeMessage*)malloc(sizeof(NodeMessage));
+      reply->code = DATA;
+      reply->Tpack.dataPacket.nodeAddress = message.Tpack.readDataPacket.nodeAddress;
+      reply->Tpack.dataPacket.sensorID = 0;
+      reply->Tpack.dataPacket.timestamp = 666;
+      reply->Tpack.dataPacket.value = 7;
+      reply->Tpack.dataPacket.alarm = 0;
+      reply->length = DATA_DIM;
 
-
-      while (VCP_write((uint8_t*)&reply, DATA_DIM) != DATA_DIM);
-
-      NodeIDType nodeID;
-      nodeID.id0 = 0;
-      nodeID.id1 = 0;
-      canJoin(nodeID);
+      MessageQueuePush(reply);
 #endif
       /*netmessage.code = message.code;
        * netmessage.payload.id = message.Tpack.readDataPacket.sensorID;*/

@@ -31,6 +31,7 @@
 #include "stm32f4xx_it.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "applayer.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -53,6 +54,10 @@ void SysTick_Handler(void)
     xPortSysTickHandler();
   }
   HAL_IncTick();
+}
+
+void EXTI0_IRQHandler(void) {
+  HAL_GPIO_EXTI_IRQHandler(KEY_BUTTON_PIN);
 }
 
 /**
