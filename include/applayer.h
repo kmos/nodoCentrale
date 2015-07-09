@@ -3,11 +3,12 @@
 
 /*######OPCODE##########*/
 typedef uint8_t OpCode;
-#define READDATA 		((uint8_t)0x00) 		//invia misurazione al centro di controllo 					###	Centro Controllo -> Nodo Sensore
-#define CONFIGSENSOR 	((uint8_t)0x01) 		//configurazione sensore 									###	Centro Controllo -> Nodo Sensore
-#define DATA 			((uint8_t)0x02)			//dato di misurazione										###	Nodo Sensore -> Centro Controllo
-#define JOIN			((uint8_t)0x03)			//join nodo, fornisce la chiave personale del nodo e l'id	### Centro Controllo <- Nodo centrale
-#define REPLYJOIN		((uint8_t)0x04)			//replyjoin risponde al nodo con la chiave condivisa			### Centro Controllo -> Nodo Centrale
+#define READDATA     ((uint8_t)0x00) 		//invia misurazione al centro di controllo 					###	Centro Controllo -> Nodo Sensore
+#define CONFIGSENSOR ((uint8_t)0x01) 		//configurazione sensore 									###	Centro Controllo -> Nodo Sensore
+#define DATA         ((uint8_t)0x02)			//dato di misurazione										###	Nodo Sensore -> Centro Controllo
+#define CANJOIN      ((uint8_t)0x03)			//join nodo, fornisce la chiave personale del nodo e l'id	### Centro Controllo <- Nodo centrale
+#define CANJOINREPLY ((uint8_t)0x04)			//replyjoin risponde al nodo con la chiave condivisa			### Centro Controllo -> Nodo Centrale
+#define JOIN         ((uint8_t)0x05)
 /*#####################*/
 
 
@@ -37,26 +38,27 @@ typedef struct netPackage{
 //Pacchetti Centro controllo <-> Nodo Centrale
 //##################################################
 
-#define READDATA_DIM 3 //Dimensione
-#define DATA_DIM 13
-#define CONFSENSDIM 14
-#define JOINDIM 12
-#define JOINREPLYDIM 28
+#define READDATA_DIM     (sizeof(ReadDataPacketType))
+#define DATA_DIM         (sizeof(DataPacketType) + 1)
+#define CONFSENS_DIM     (sizeof(ConfigSensorType))
+#define CANJOIN_DIM      (sizeof(CanJoinPacketType) + 1)
+#define CANJOINREPLY_DIM (sizeof(CanJoinReplyPacketType))
+#define JOIN_DIM         (sizeof(JoinPacketType) + 1)
 
-
-typedef struct readDataPacketType {
+typedef struct __attribute__((aligned(1),packed)) {
   uint16_t nodeAddress;
   uint8_t  sensorID;
 } ReadDataPacketType;
 
-typedef struct dataPacketType {
+typedef struct __attribute__((aligned(1),packed)) {
   uint16_t nodeAddress;
   uint8_t  sensorID;
+  int32_t  timestamp;
   int32_t  value;
   uint8_t  alarm;
-}DataPacketType;
+} DataPacketType;
 
-typedef struct configSensorType {
+typedef struct __attribute__((aligned(1),packed)) {
   uint16_t nodeAddress;
   uint8_t  sensorID;
   uint8_t  alarm;
@@ -66,36 +68,39 @@ typedef struct configSensorType {
   int8_t   priority;
 } ConfigSensorType;
 
-typedef struct nodeIDType {
+typedef struct __attribute__((aligned(1),packed)) {
   uint64_t id0;
   uint32_t id1;
 } NodeIDType;
 
-typedef struct secretKeyType {
+typedef struct __attribute__((aligned(1),packed)) {
   uint64_t sk0;
   uint64_t sk1;
 } SecretKeyType;
 
-typedef struct canJoinPacketType {
+typedef struct __attribute__((aligned(1),packed)) {
   NodeIDType nodeID;
 } CanJoinPacketType;
 
-typedef struct canJoinReplyPacketType {
+typedef struct __attribute__((aligned(1),packed)) {
   NodeIDType nodeID;
   SecretKeyType secretKey;
 } CanJoinReplyPacketType;
 
+typedef struct  __attribute__((aligned(1),packed)) {
+  NodeIDType nodeID;
+} JoinPacketType;
 
-
-typedef struct nodeMessage{
-	uint8_t code;
-	union {
-		ReadDataPacketType 		readDataPacket;
-		DataPacketType 			dataPacket;
-		ConfigSensorType		configSensor;
-		CanJoinPacketType		canJoinPacket;
-		CanJoinReplyPacketType	canJoinReplyPacket;
-	} Tpack;
+typedef struct __attribute__((aligned(1),packed)) {
+  uint8_t code;
+  union __attribute__((aligned(1),packed)) {
+    ReadDataPacketType     readDataPacket;
+    DataPacketType         dataPacket;
+    ConfigSensorType       configSensor;
+    CanJoinPacketType      canJoinPacket;
+    CanJoinReplyPacketType canJoinReplyPacket;
+    JoinPacketType         joinPacket;
+  } Tpack;
 } NodeMessage;
 #endif
 
