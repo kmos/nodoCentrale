@@ -141,8 +141,6 @@ void vApplicationStackOverflowHook( xTaskHandle pxTask, char *pcTaskName )
 }
 #else
 
-
-
 static void reciveFromCenter( ){
   NodeMessage message;
   NetPackage netmessage;
@@ -151,8 +149,6 @@ static void reciveFromCenter( ){
   NodeMessage reply;
   BSP_LED_Toggle(LED3);
 #endif
-
-
 
   while (VCP_read(&opcode, 1) != 1);
 
@@ -163,14 +159,15 @@ static void reciveFromCenter( ){
   switch(opcode) {
     case CONFIGSENSOR:
       //invia configurazione al sensore: CC -> nodo centrale -> nodo sensore
-    	while (VCP_read((uint8_t*)&message, CONFSENSDIM) != CONFSENSDIM);
-        netmessage.code = message.code;
-        netmessage.payload.id = message.Tpack.configSensor.sensorID;
-        netmessage.payload.period=message.Tpack.configSensor.period;
-        netmessage.payload.lt=message.Tpack.configSensor.lowThreshold;
-        netmessage.payload.ht=message.Tpack.configSensor.highThreshold;
-        netmessage.payload.priority=message.Tpack.configSensor.priority;
-        netmessage.payload.alarm = message.Tpack.configSensor.alarm;
+      while (VCP_read((uint8_t*)&message, CONFSENS_DIM) != CONFSENS_DIM);
+
+      netmessage.code = message.code;
+      netmessage.payload.id = message.Tpack.configSensor.sensorID;
+      netmessage.payload.period=message.Tpack.configSensor.period;
+      netmessage.payload.lt=message.Tpack.configSensor.lowThreshold;
+      netmessage.payload.ht=message.Tpack.configSensor.highThreshold;
+      netmessage.payload.priority=message.Tpack.configSensor.priority;
+      netmessage.payload.alarm = message.Tpack.configSensor.alarm;
 			/*AGGIUNTA SICUREZZA */
 
 			/*INVIO RETE */
@@ -179,11 +176,11 @@ static void reciveFromCenter( ){
 
       break;
 
-    case REPLYJOIN:
+    case CANJOINREPLY:
       //risposta alla join:CC -> nodo centrale
-    	while (VCP_read((uint8_t*)&message, JOINREPLYDIM) != JOINREPLYDIM);
-        netmessage.code = message.code;
-        //i primi 64bit di una chiave tutti uguale a zero...IMPOSSIBILE
+      while (VCP_read((uint8_t*)&message, CANJOINREPLY_DIM) != CANJOINREPLY_DIM);
+      netmessage.code = message.code;
+      //i primi 64bit di una chiave tutti uguale a zero...IMPOSSIBILE
 		//ALL'ARRIVO DELLA REPLY SE I PRIMI 64BIT DELLA KEY SONO UGUALI A 0 VUOL DIRE CHE E' FALLITO
 		//IL JOIN, DI CONSEGUENZA IL NODO NON E' PRESENTE NELLA LISTA, VICEVERSA SE E' PRESENTE UNA KEY, ATTRAVERSO
 		//QUELLA SI EFFETTUA LA JOIN RISPONDENDO TRAMITE UNA REPLY
@@ -204,20 +201,23 @@ static void reciveFromCenter( ){
 
       break;
 
-    case READDATA:
+    case READDATA: {
+      BSP_LED_Toggle(LED5);
+
       //invia richiesta di lettura: CC -> nodo centrale -> nodo sensore
       while (VCP_read((uint8_t*)&message, READDATA_DIM) != READDATA_DIM);
       netmessage.code = READDATA;
       netmessage.payload.id = message.Tpack.readDataPacket.sensorID;
 
 #ifdef TESTING
-      BSP_LED_Toggle(LED5);
-      BSP_LED_Toggle(LED6);
       reply.code = DATA;
       reply.Tpack.dataPacket.nodeAddress = message.Tpack.readDataPacket.nodeAddress;
       reply.Tpack.dataPacket.sensorID = 0;
+      reply.Tpack.dataPacket.timestamp = 666;
       reply.Tpack.dataPacket.value = 7;
       reply.Tpack.dataPacket.alarm = 0;
+
+      BSP_LED_Toggle(LED6);
 
       while (VCP_write((uint8_t*)&reply, DATA_DIM) != DATA_DIM);
 #endif
@@ -229,6 +229,7 @@ static void reciveFromCenter( ){
       /*INVIO RETE */
       //SEND_MESSAGE(message->readDataPacket->nodeAddress,netmessage,...);
       break;
+    }
   }
 }
 
