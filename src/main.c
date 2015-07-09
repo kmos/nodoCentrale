@@ -269,7 +269,8 @@ static void reciveFromCenter( ) {
 		//IL JOIN, DI CONSEGUENZA IL NODO NON E' PRESENTE NELLA LISTA, VICEVERSA SE E' PRESENTE UNA KEY, ATTRAVERSO
 		//QUELLA SI EFFETTUA LA JOIN RISPONDENDO TRAMITE UNA REPLY
 #ifdef TESTING
-      canJoinCallback(message.Tpack.canJoinReplyPacket.nodeID, message.Tpack.canJoinReplyPacket.secretKey);
+      canJoinCallback(message.Tpack.canJoinReplyPacket.nodeID, message.Tpack.canJoinReplyPacket.secretKey,
+                      message.Tpack.canJoinReplyPacket.nodeAddress);
 #endif
 
         if(message.Tpack.canJoinReplyPacket.secretKey.sk0 == 0) {

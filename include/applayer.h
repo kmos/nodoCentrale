@@ -80,12 +80,12 @@ typedef struct __attribute__((aligned(1),packed)) {
 
 typedef struct __attribute__((aligned(1),packed)) {
   NodeIDType nodeID;
-  uint16_t nodeAddress;
 } CanJoinPacketType;
 
 typedef struct __attribute__((aligned(1),packed)) {
   NodeIDType nodeID;
   SecretKeyType secretKey;
+  uint16_t nodeAddress;
 } CanJoinReplyPacketType;
 
 typedef struct  __attribute__((aligned(1),packed)) {
