@@ -16,18 +16,18 @@ void exampleCanJoinCallback(NodeIDType nodeID, SecretKeyType key, uint16_t nodeA
 
 void onCanJoinReply(NodeIDType id, SecretKeyType key, uint16_t address);
 
-//usb handler
+// USB handle
 USBD_HandleTypeDef USBD_Device;
 
-//Setup Hardware
+// Setup hardware
 void setupUSB(void);
-void setupBSD(void);
+void setupBSP(void);
 
 int main(int argc, char* argv[]) {
   HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
   setupUSB();
   HAL_Delay(4000);
-  setupBSD();
+  setupBSP();
 
   setCanJoinCallback(exampleCanJoinCallback);
 
@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
   }
 }
 
-void setupBSD(void){
+void setupBSP(void){
   BSP_LED_Init(LED3);
   BSP_LED_Init(LED4);
   BSP_LED_Init(LED5);
