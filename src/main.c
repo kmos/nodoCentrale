@@ -141,12 +141,21 @@ void vApplicationStackOverflowHook( xTaskHandle pxTask, char *pcTaskName )
 }
 #else
 
-void canJoin(NodeIDType nodeID, SecretKeyType (*callback)(void)) {
+void (*canJoinCallback)(NodeIDType, SecretKeyType) = 0;
+
+void canJoin(NodeIDType nodeID, void (*callback)(NodeIDType, SecretKeyType)) {
+  canJoinCallback = callback;
+
   NodeMessage msg;
   msg.code = CANJOIN;
   msg.Tpack.canJoinPacket.nodeID = nodeID;
 
   while (VCP_write((uint8_t*)&msg, CANJOIN_DIM) != CANJOIN_DIM);
+}
+
+void exampleCanJoinCallback(NodeIDType nodeID, SecretKeyType key) {
+  BSP_LED_Toggle(LED4);
+  join(nodeID);
 }
 
 void join(NodeIDType nodeID) {
@@ -167,10 +176,6 @@ static void reciveFromCenter( ){
 #endif
 
   while (VCP_read(&opcode, 1) != 1);
-
-#ifdef TESTING
-  BSP_LED_Toggle(LED4);
-#endif
 
   switch(opcode) {
     case CONFIGSENSOR:
@@ -201,7 +206,7 @@ static void reciveFromCenter( ){
 		//IL JOIN, DI CONSEGUENZA IL NODO NON E' PRESENTE NELLA LISTA, VICEVERSA SE E' PRESENTE UNA KEY, ATTRAVERSO
 		//QUELLA SI EFFETTUA LA JOIN RISPONDENDO TRAMITE UNA REPLY
 #ifdef TESTING
-      join(message.Tpack.canJoinReplyPacket.nodeID);
+      canJoinCallback(message.Tpack.canJoinReplyPacket.nodeID, message.Tpack.canJoinReplyPacket.secretKey);
 #endif
 
         if(message.Tpack.canJoinReplyPacket.secretKey.sk0 == 0) {
@@ -214,8 +219,6 @@ static void reciveFromCenter( ){
       break;
 
     case READDATA: {
-      BSP_LED_Toggle(LED5);
-
       //invia richiesta di lettura: CC -> nodo centrale -> nodo sensore
       while (VCP_read((uint8_t*)&message, READDATA_DIM) != READDATA_DIM);
       netmessage.code = READDATA;
@@ -235,9 +238,7 @@ static void reciveFromCenter( ){
       NodeIDType nodeID;
       nodeID.id0 = 0;
       nodeID.id1 = 0;
-      canJoin(nodeID, 0);
-
-      BSP_LED_Toggle(LED6);
+      canJoin(nodeID, exampleCanJoinCallback);
 #endif
       /*netmessage.code = message.code;
        * netmessage.payload.id = message.Tpack.readDataPacket.sensorID;*/
