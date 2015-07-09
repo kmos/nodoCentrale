@@ -64,7 +64,8 @@ void receiveFromCenter() {
 
   switch(opcode) {
     case CONFIGSENSOR:
-      while (VCP_read((uint8_t*)&message, CONFSENS_DIM) != CONFSENS_DIM);
+      ConfigSensorType configSensorPacket;
+      while (VCP_read((uint8_t*)&configSensorPacket, CONFSENS_DIM) != CONFSENS_DIM);
 
       // XXX: Invia configurazione al nodo sensore.
 
