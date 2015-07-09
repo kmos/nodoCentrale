@@ -7,14 +7,13 @@
 #include "usbd_cdc.h"
 #include "usbd_cdc_if_template.h"
 #include "usbd_desc.h"
+#include "queue.h"
 #include "applayer.h"
 
 void receiveFromCenter();
 
 void setCanJoinCallback(void (*callback)(NodeIDType, SecretKeyType, uint16_t nodeAddress));
-void exampleCanJoinCallback(NodeIDType nodeID, SecretKeyType key, uint16_t nodeAddress);
-
-void onCanJoinReply(NodeIDType id, SecretKeyType key, uint16_t address);
+void exampleOnCanJoinReply(NodeIDType nodeID, SecretKeyType key, uint16_t nodeAddress);
 
 // USB handle
 USBD_HandleTypeDef USBD_Device;
@@ -29,7 +28,7 @@ int main(int argc, char* argv[]) {
   HAL_Delay(4000);
   setupBSP();
 
-  setCanJoinCallback(exampleCanJoinCallback);
+  setCanJoinCallback(exampleOnCanJoinReply);
 
   while (1) {
     receiveFromCenter();
@@ -49,45 +48,6 @@ void setupUSB(){
   USBD_RegisterClass(&USBD_Device, &USBD_CDC);
   USBD_CDC_RegisterInterface(&USBD_Device, &USBD_CDC_Template_fops);
   USBD_Start(&USBD_Device);
-}
-
-typedef struct MessageQueueElem {
-  NodeMessage* msg;
-  struct MessageQueueElem* next;
-} MessageQueueElem_t;
-
-MessageQueueElem_t* messageQueueFirst = NULL;
-MessageQueueElem_t* messageQueueLast = NULL;
-
-void MessageQueuePush(NodeMessage* msg) {
-  MessageQueueElem_t* newElem = (MessageQueueElem_t*)malloc(sizeof(MessageQueueElem_t));
-  newElem->msg = msg;
-  newElem->next = NULL;
-
-  if (messageQueueFirst == NULL || messageQueueLast == NULL) {
-    messageQueueFirst = messageQueueLast = newElem;
-    return;
-  }
-
-  messageQueueLast->next = newElem;
-  messageQueueLast = messageQueueLast->next;
-}
-
-NodeMessage* MessageQueuePop() {
-  if (messageQueueFirst == NULL && messageQueueLast == NULL) {
-    return NULL;
-  }
-
-  MessageQueueElem_t* oldFirst = messageQueueFirst;
-  messageQueueFirst = oldFirst->next;
-
-  if (messageQueueFirst == NULL) {
-    messageQueueLast = NULL;
-  }
-
-  NodeMessage* msg = oldFirst->msg;
-  free(oldFirst);
-  return msg;
 }
 
 void (*canJoinCallback)(NodeIDType, SecretKeyType, uint16_t) = 0;
