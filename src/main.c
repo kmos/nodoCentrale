@@ -29,6 +29,9 @@ static void reciveFromCenter();
 static void reciveFromNet();
 #endif
 
+void setCanJoinCallback(void (*callback)(NodeIDType, SecretKeyType));
+void exampleCanJoinCallback(NodeIDType nodeID, SecretKeyType key);
+
 //usb handler
 USBD_HandleTypeDef USBD_Device;
 
@@ -45,13 +48,11 @@ void setupBSD(void);
 //var
 uint8_t opcode;
 
-int
-main(int argc, char* argv[])
-{
-    HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
-    setupUSB();
-    HAL_Delay(4000);
-    setupBSD();
+int main(int argc, char* argv[]) {
+  HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
+  setupUSB();
+  HAL_Delay(4000);
+  setupBSD();
 
 #ifdef FREERTOS_ON
 /***************Inizio parte con freeRTOS**************/
@@ -71,14 +72,14 @@ main(int argc, char* argv[])
    	for( ;; );
 #else
 /***************Inizio parte senza freeRTOS***********/
-   	while(1) {
-   	  reciveFromCenter();
-   	}
 
+  setCanJoinCallback(exampleCanJoinCallback);
 
+  while (1) {
+    reciveFromCenter();
+  }
 #endif
 }
-
 
 void setupBSD(void){
     BSP_LED_Init(LED3);
@@ -143,19 +144,16 @@ void vApplicationStackOverflowHook( xTaskHandle pxTask, char *pcTaskName )
 
 void (*canJoinCallback)(NodeIDType, SecretKeyType) = 0;
 
-void canJoin(NodeIDType nodeID, void (*callback)(NodeIDType, SecretKeyType)) {
+void setCanJoinCallback(void (*callback)(NodeIDType, SecretKeyType)) {
   canJoinCallback = callback;
+}
 
+void canJoin(NodeIDType nodeID) {
   NodeMessage msg;
   msg.code = CANJOIN;
   msg.Tpack.canJoinPacket.nodeID = nodeID;
 
   while (VCP_write((uint8_t*)&msg, CANJOIN_DIM) != CANJOIN_DIM);
-}
-
-void exampleCanJoinCallback(NodeIDType nodeID, SecretKeyType key) {
-  BSP_LED_Toggle(LED4);
-  join(nodeID);
 }
 
 void join(NodeIDType nodeID) {
@@ -164,6 +162,11 @@ void join(NodeIDType nodeID) {
   msg.Tpack.joinPacket.nodeID = nodeID;
 
   while (VCP_write((uint8_t*)&msg, JOIN_DIM) != JOIN_DIM);
+}
+
+void exampleCanJoinCallback(NodeIDType nodeID, SecretKeyType key) {
+  BSP_LED_Toggle(LED4);
+  join(nodeID);
 }
 
 static void reciveFromCenter( ){
@@ -238,7 +241,7 @@ static void reciveFromCenter( ){
       NodeIDType nodeID;
       nodeID.id0 = 0;
       nodeID.id1 = 0;
-      canJoin(nodeID, exampleCanJoinCallback);
+      canJoin(nodeID);
 #endif
       /*netmessage.code = message.code;
        * netmessage.payload.id = message.Tpack.readDataPacket.sensorID;*/
