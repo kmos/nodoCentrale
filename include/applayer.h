@@ -3,11 +3,11 @@
 
 /*######OPCODE##########*/
 typedef uint8_t OpCode;
-#define READDATA     ((uint8_t)0x00) 		//invia misurazione al centro di controllo 					###	Centro Controllo -> Nodo Sensore
-#define CONFIGSENSOR ((uint8_t)0x01) 		//configurazione sensore 									###	Centro Controllo -> Nodo Sensore
-#define DATA         ((uint8_t)0x02)			//dato di misurazione										###	Nodo Sensore -> Centro Controllo
-#define CANJOIN      ((uint8_t)0x03)			//join nodo, fornisce la chiave personale del nodo e l'id	### Centro Controllo <- Nodo centrale
-#define CANJOINREPLY ((uint8_t)0x04)			//replyjoin risponde al nodo con la chiave condivisa			### Centro Controllo -> Nodo Centrale
+#define READDATA     ((uint8_t)0x00)            //invia misurazione al centro di controllo                                      ###     Centro Controllo -> Nodo Sensore
+#define CONFIGSENSOR ((uint8_t)0x01)            //configurazione sensore                                                                        ###     Centro Controllo -> Nodo Sensore
+#define DATA         ((uint8_t)0x02)                    //dato di misurazione                                                                           ###     Nodo Sensore -> Centro Controllo
+#define CANJOIN      ((uint8_t)0x03)                    //join nodo, fornisce la chiave personale del nodo e l'id       ### Centro Controllo <- Nodo centrale
+#define CANJOINREPLY ((uint8_t)0x04)                    //replyjoin risponde al nodo con la chiave condivisa                    ### Centro Controllo -> Nodo Centrale
 #define JOIN         ((uint8_t)0x05)
 /*#####################*/
 
@@ -15,20 +15,20 @@ typedef uint8_t OpCode;
 
 
 typedef struct payload{
-	uint8_t id; 		//id sensore
-	int16_t val;		//valore
-	uint8_t alarm;		//allarme
-	int32_t ht;			//high th.shold
-	int32_t lt;			//low  th.shold
-	int16_t period;		//periodo
-	int8_t  priority;	//priorità
+        uint8_t id;             //id sensore
+        int16_t val;            //valore
+        uint8_t alarm;          //allarme
+        int32_t ht;                     //high th.shold
+        int32_t lt;                     //low  th.shold
+        int16_t period;         //periodo
+        int8_t  priority;       //priorit������
 } Payload;
 
 
 
 typedef struct netPackage{
-	OpCode 	code;
-	Payload	payload;
+        OpCode  code;
+        Payload payload;
 } NetPackage;
 
 //160 bit application package for the net
@@ -69,8 +69,7 @@ typedef struct __attribute__((aligned(1),packed)) {
 } ConfigSensorType;
 
 typedef struct __attribute__((aligned(1),packed)) {
-  uint64_t id0;
-  uint32_t id1;
+  uint8_t id[12];
 } NodeIDType;
 
 typedef struct __attribute__((aligned(1),packed)) {
