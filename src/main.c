@@ -7,8 +7,8 @@
 #include "usbd_cdc.h"
 #include "usbd_cdc_if_template.h"
 #include "usbd_desc.h"
-#include "queue.h"
 #include "applayer.h"
+#include "ringBuffer.h"
 
 // USB handle
 USBD_HandleTypeDef USBD_Device;
@@ -47,14 +47,12 @@ void receiveFromCenter() {
   BSP_LED_Toggle(LED3);
 
   while (1) {
-    NodeMessage* toSend = MessageQueuePop();
-    if (!toSend) {
+    NodeMessage toSend;
+    if (RingBufferGet((uint8_t*)&toSend, sizeof(NodeMessage)) != 0) {
       break;
     }
 
-    while (VCP_write((uint8_t*)toSend, toSend->length) != toSend->length);
-
-    free(toSend);
+    while (VCP_write((uint8_t*)&toSend, toSend.length) != toSend.length);
   }
 
   uint8_t opcode;

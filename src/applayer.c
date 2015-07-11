@@ -1,7 +1,8 @@
 #include <stdlib.h>
 
-#include "queue.h"
+#include "stm32f4_discovery.h"
 #include "applayer.h"
+#include "ringBuffer.h"
 
 void (*canJoinCallback)(NodeIDType, SecretKeyType, uint16_t) = NULL;
 
@@ -14,37 +15,37 @@ void callCanJoinCallback(NodeIDType nodeID, SecretKeyType secretKey, uint16_t no
 }
 
 void canJoin(NodeIDType nodeID) {
-  NodeMessage* msg = (NodeMessage*)malloc(sizeof(NodeMessage));
-  msg->code = CANJOIN;
-  msg->Tpack.canJoinPacket.nodeID = nodeID;
-  msg->length = CANJOIN_DIM;
+  NodeMessage msg;
+  msg.code = CANJOIN;
+  msg.Tpack.canJoinPacket.nodeID = nodeID;
+  msg.length = CANJOIN_DIM;
 
-  MessageQueuePush(msg);
+  RingBufferPut((uint8_t*)&msg, sizeof(NodeMessage));
 }
 
 void join(NodeIDType nodeID) {
-  NodeMessage* msg = (NodeMessage*)malloc(sizeof(NodeMessage));
-  msg->code = JOIN;
-  msg->Tpack.joinPacket.nodeID = nodeID;
-  msg->length = JOIN_DIM;
+  NodeMessage msg;
+  msg.code = JOIN;
+  msg.Tpack.joinPacket.nodeID = nodeID;
+  msg.length = JOIN_DIM;
 
-  MessageQueuePush(msg);
+  RingBufferPut((uint8_t*)&msg, sizeof(NodeMessage));
 }
 
 // XXX: Ricezione di un pacchetto validato dal livello sicurezza.
 void securityLevelCallback(uint8_t* data, uint16_t address) {
   NetMessage* payload = (NetMessage*)data;
 
-  NodeMessage* msg = (NodeMessage*)malloc(sizeof(NodeMessage));
-  msg->code = DATA;
-  msg->Tpack.dataPacket.nodeAddress = address;
-  msg->Tpack.dataPacket.sensorID = payload->sensorID;
-  msg->Tpack.dataPacket.timestamp = 0; /* Da dove prendiamo il timestamp? */
-  msg->Tpack.dataPacket.value = payload->value;
-  msg->Tpack.dataPacket.alarm = payload->alarm;
-  msg->length = DATA_DIM;
+  NodeMessage msg;
+  msg.code = DATA;
+  msg.Tpack.dataPacket.nodeAddress = address;
+  msg.Tpack.dataPacket.sensorID = payload->sensorID;
+  msg.Tpack.dataPacket.timestamp = 0; /* Da dove prendiamo il timestamp? */
+  msg.Tpack.dataPacket.value = payload->value;
+  msg.Tpack.dataPacket.alarm = payload->alarm;
+  msg.length = DATA_DIM;
 
-  MessageQueuePush(msg);
+  RingBufferPut((uint8_t*)&msg, sizeof(NodeMessage));
 }
 
 void sendConfigSensor(ConfigSensorType* packet) {
